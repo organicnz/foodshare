@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:foodshare/screens/start.dart';
+// import 'package:foodshare/screens/start.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class HomePage extends StatefulWidget {
@@ -10,42 +10,41 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  FirebaseUser user;
+  late User user;
   bool isloggedin = false;
 
-  checkAuthentication() async {
-    _auth.authStateChanges.listen(
-      (user) {
-        if (user == null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Start()),
-          );
-        }
-      },
-    );
-  }
-
-  signOut() async {
-    _auth.signOut();
+  checkAuthentification() async {
+    _auth.authStateChanges().listen((user) {
+      if (user == null) {
+        Navigator.of(context).pushReplacementNamed("start");
+      }
+    });
   }
 
   getUser() async {
-    FirebaseUser firebaseUser = await _auth.currentUser;
+    User? firebaseUser = _auth.currentUser;
     await firebaseUser?.reload();
-    firebaseUser = await _auth.currentUser;
+    firebaseUser = _auth.currentUser;
 
     if (firebaseUser != null) {
       setState(() {
-        this.user = firebaseUser;
+        this.user = firebaseUser!;
         this.isloggedin = true;
       });
     }
   }
 
+  signOut() async {
+    _auth.signOut();
+
+    final googleSignIn = GoogleSignIn();
+    await googleSignIn.signOut();
+  }
+
   @override
-  void InitState() {
-    this.checkAuthentication();
+  void initState() {
+    super.initState();
+    this.checkAuthentification();
     this.getUser();
   }
 
@@ -67,9 +66,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                   Container(
                     child: Text(
-                      "Hello ${user.dispayName} you are Logged in as ${user.email}",
+                      "Hello ${user.displayName} you are Logged in as ${user.email}",
                       style: TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.bold),
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   ElevatedButton(

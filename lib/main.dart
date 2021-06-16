@@ -1,8 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:foodshare/screens/home_page.dart';
-import 'package:foodshare/screens/home_screen.dart';
+// import 'package:foodshare/screens/home_screen.dart';
 import 'package:foodshare/screens/login.dart';
+import 'package:foodshare/screens/signup.dart';
 import 'package:foodshare/screens/start.dart';
 
 void main() async {
@@ -22,6 +23,11 @@ class MyApp extends StatelessWidget {
         accentColor: Color(0xFFFEF9EB),
       ),
       home: HomePage(),
+      routes: <String, WidgetBuilder>{
+        "Login": (BuildContext context) => Login(),
+        "SignUp": (BuildContext context) => SignUp(),
+        "Start": (BuildContext context) => Start(),
+      },
     );
   }
 }

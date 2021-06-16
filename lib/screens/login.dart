@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:foodshare/screens/home_page.dart';
+// import 'package:foodshare/screens/home_page.dart';
 import 'package:foodshare/screens/signup.dart';
 
 class Login extends StatefulWidget {
@@ -14,25 +14,22 @@ class _LoginState extends State<Login> {
 
   late String _email, _password;
 
-  checkAuthentification(async) {
+  checkAuthentification() async {
     _auth.authStateChanges().listen(
-      (User? user) {
+      (user) {
         if (user != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => "HomePage"(),
-            ),
-          );
+          print(user);
+
+          Navigator.pushReplacementNamed(context, "/");
         }
       },
     );
+  }
 
-    @override
-    void initState() {
-      super.initState();
-      this.checkAuthentification();
-    }
+  @override
+  void initState() {
+    super.initState();
+    this.checkAuthentification();
   }
 
   login() async {
@@ -40,10 +37,11 @@ class _LoginState extends State<Login> {
       _formKey.currentState!.save();
 
       try {
-        FirebaseUser user = await _auth.signInWithEmailAndPassword(
+        await _auth.signInWithEmailAndPassword(
             email: _email, password: _password);
       } catch (e) {
-        showError(e.errormessage);
+        // showError(e.message);
+        print(e);
       }
     }
   }
@@ -86,7 +84,7 @@ class _LoginState extends State<Login> {
   }
 
   navigateToSignUp() async {
-    Navigator.push(context, MeterialPageRoute(builder: (context) => SignUp()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => SignUp()));
   }
 
   @override

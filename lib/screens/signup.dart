@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:foodshare/screens/home_page.dart';
 
 class SignUp extends StatefulWidget {
   @override
@@ -8,19 +7,16 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth _auth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   late String _email, _password, _name;
 
   checkAuthentication() async {
-    _auth.authStateChanges.listen(
+    _auth.authStateChanges().listen(
       (user) async {
         if (user != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => HomePage()),
-          );
+          Navigator.pushReplacementNamed(context, "/");
         }
       },
     );
@@ -33,19 +29,21 @@ class _SignUpState extends State<SignUp> {
   }
 
   signUp() async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
       try {
-        FirebaseUser user = await _auth.createUserWithEmailAndPassword(
+        UserCredential user = await _auth.createUserWithEmailAndPassword(
             email: _email, password: _password);
         if (user != null) {
-          UserUpdateInfo updateuser = UserUpdateInfo();
-          updateuser.displayName = _name;
-          user.updateProfile(updateuser);
+          // UserUpdateInfo updateuser = UserUpdateInfo();
+          // updateuser.displayName = _name;
+          // user.updateProfile(updateuser);
+          await _auth.currentUser!.updateDisplayName(_name);
         }
       } catch (e) {
-        showError(e.errormessage);
+        // showError(e.message);
+        print(e);
       }
     }
   }
