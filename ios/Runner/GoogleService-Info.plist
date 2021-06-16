@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>613696094067-a8ec9a64g7artujpjv7fqteu9rfho70u.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.613696094067-a8ec9a64g7artujpjv7fqteu9rfho70u</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>613696094067-gpgcbo58sna9olovermh3vubrf74qqde.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAyfDqtS-BfCcvF_6VVizY2qZx9IPY08UM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>613696094067</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>club.foodshare.app</string>
+	<key>PROJECT_ID</key>
+	<string>foodshare-266518</string>
+	<key>STORAGE_BUCKET</key>
+	<string>foodshare-266518.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:613696094067:ios:a6d8192316e5e1e0130f06</string>
+	<key>DATABASE_URL</key>
+	<string>https://foodshare-266518.firebaseio.com</string>
+</dict>
+</plist>
