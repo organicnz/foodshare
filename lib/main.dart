@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: Colors.yellow.shade800,
-        accentColor: Color(0xFFFEF9EB),
+        cardColor: Theme.of(context).colorScheme.secondary,
       ),
       home: HomePage(),
       routes: <String, WidgetBuilder>{

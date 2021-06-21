@@ -35,6 +35,7 @@ class _SignUpState extends State<SignUp> {
       try {
         UserCredential user = await _auth.createUserWithEmailAndPassword(
             email: _email, password: _password);
+        // ignore: unnecessary_null_comparison
         if (user != null) {
           // UserUpdateInfo updateuser = UserUpdateInfo();
           // updateuser.displayName = _name;
