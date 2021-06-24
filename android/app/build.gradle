@@ -53,16 +53,16 @@ android {
         }
     }
     
-    signingConfigs {
-       release {
-           apply from: '../keystore/keystoreConfig.gradle'
+//     signingConfigs {
+//        release {
+//            apply from: '../keystore/keystoreConfig.gradle'
 
-           keyAlias keystoreConfig.keyAlias
-           keyPassword keystoreConfig.keyPassword
-           storeFile file(keystoreConfig.storeFile)
-           storePassword keystoreConfig.storePassword
-       }
-   }
+//            keyAlias keystoreConfig.keyAlias
+//            keyPassword keystoreConfig.keyPassword
+//            storeFile file(keystoreConfig.storeFile)
+//            storePassword keystoreConfig.storePassword
+//        }
+//    }
 }
 
 flutter {
@@ -74,5 +74,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.google.firebase:firebase-auth:20.0.3'
+    implementation 'com.google.firebase:firebase-firestore:22.1.1'
 }
 

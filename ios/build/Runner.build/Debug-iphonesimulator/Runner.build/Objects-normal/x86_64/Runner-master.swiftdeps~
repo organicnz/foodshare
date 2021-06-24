@@ -1,4 +1,5 @@
 version: "Apple Swift version 5.4 (swiftlang-1205.0.26.9 clang-1205.0.19.55)"
-options: "7f063609999a2dbf675542b2266ccbf9"
-build_time: [1624263376, 730511000]
+options: "820851d74d4f4ca9a13fcd5511889d6e"
+build_time: [1624268470, 362748000]
 inputs:
+  "/Users/organic/CloudMail/IT/Development/Work/foodshare/ios/Runner/AppDelegate.swift": [1616184140, 0]
