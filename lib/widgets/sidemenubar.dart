@@ -49,7 +49,7 @@ class SideMenuBar extends StatelessWidget {
                             Icon(userLoggedIn ? Icons.logout : Icons.login,
                                 color: Colors.white, size: 20),
                             SizedBox(width: 10),
-                            Text(userLoggedIn ? 'Salir' : 'Entrar',
+                            Text(userLoggedIn ? 'Exit' : 'Entrar',
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 20))
                           ],

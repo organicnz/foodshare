@@ -18,7 +18,7 @@ class CategoryListPage extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
         padding: const EdgeInsets.only(top: 10, bottom: 10),
-        child: Text('Seleccione una categoría:',
+        child: Text('Select a category:',
             textAlign: TextAlign.center, style: TextStyle(color: Colors.black)),
       ),
       Expanded(

@@ -163,7 +163,7 @@ class DetailsPageState extends State<DetailsPage> {
                                 if (!cart.isSubCategoryAddedToCart(
                                     widget.subCategory)) {
                                   renderedButton = ThemeButton(
-                                    label: 'Añadir al Carrito',
+                                    label: 'Add to Cart',
                                     icon: Icon(Icons.shopping_cart,
                                         color: Colors.white),
                                     onClick: () {
@@ -181,7 +181,7 @@ class DetailsPageState extends State<DetailsPage> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          'Añadido al Carrito',
+                                          'Add to Cart',
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
@@ -229,7 +229,7 @@ class DetailsPageState extends State<DetailsPage> {
                                   style: TextStyle(color: Colors.grey)),
                               SizedBox(height: 20),
                               ThemeButton(
-                                  label: 'Hacer login',
+                                  label: 'Login',
                                   onClick: () async {
                                     // login and fetch the cart info
                                     bool success =

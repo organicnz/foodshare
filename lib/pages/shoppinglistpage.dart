@@ -24,7 +24,7 @@ class ShoppingListPage extends StatelessWidget {
               ),
               SizedBox(width: 10),
               Expanded(
-                child: Text('Tu Carrito',
+                child: Text('Your Cart',
                     style: TextStyle(
                         color: Colors.grey,
                         fontSize: 25,
@@ -186,7 +186,7 @@ class ShoppingListPage extends StatelessWidget {
                           height: 50,
                           color: Colors.grey[400],
                         ),
-                        Text('Tu carrito no tiene artículos.\nAgrega alguno.',
+                        Text('Your cart has no items. \nAdd one.',
                             style: TextStyle(color: Colors.grey[400]))
                       ],
                     ),

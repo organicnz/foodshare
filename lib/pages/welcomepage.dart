@@ -45,19 +45,19 @@ class WelcomePage extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 50),
-                      Text('Bienvenido/a',
+                      Text('Share more Throw less',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 40,
                               fontWeight: FontWeight.bold)),
                       SizedBox(height: 40),
-                      Text('Productos Frescos.\nSaludables. A Tiempo',
+                      Text('Welcome to\n ​Foodshare app.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.white, fontSize: 18)),
                       SizedBox(height: 40),
                       ThemeButton(
-                        label: 'Tratar Ahora!',
+                        label: 'Try Now!',
                         highlight: Colors.green[900],
                         color: AppColors.MAIN_COLOR,
                         onClick: () {
@@ -65,7 +65,7 @@ class WelcomePage extends StatelessWidget {
                         },
                       ),
                       ThemeButton(
-                        label: 'Hacer Onboarding',
+                        label: ' Onboarding',
                         highlight: Colors.green[900],
                         color: AppColors.DARK_GREEN,
                         onClick: () {
@@ -74,7 +74,7 @@ class WelcomePage extends StatelessWidget {
                         },
                       ),
                       ThemeButton(
-                          label: "Hacer Login",
+                          label: "Login",
                           labelColor: AppColors.MAIN_COLOR,
                           color: Colors.transparent,
                           highlight: AppColors.MAIN_COLOR.withOpacity(0.5),
