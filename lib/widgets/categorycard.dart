@@ -3,6 +3,7 @@ import 'package:foodshare/models/category.dart';
 
 import 'categoryicon.dart';
 
+// ignore: must_be_immutable
 class CategoryCard extends StatelessWidget {
   Category? category;
   Function? onCardClick;
@@ -24,7 +25,7 @@ class CategoryCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Image.asset(
-                      'assets/imgs/' + this.category!.imgName! + '.png',
+                      'assets/images/' + this.category!.imgName! + '.png',
                       fit: BoxFit.cover),
                 ),
               ),

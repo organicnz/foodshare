@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:foodshare/pages/detailspage.dart';
 import 'package:foodshare/pages/mainpage.dart';
@@ -26,7 +26,7 @@ void main() {
       ],
       child: MaterialApp(
         navigatorKey: Utils.mainAppNav,
-        theme: ThemeData(fontFamily: 'Raleway'),
+        theme: ThemeData(fontFamily: 'nunito-other'),
         debugShowCheckedModeBanner: false,
         initialRoute: '/',
         routes: {

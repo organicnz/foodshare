@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:foodshare/models/cartitem.dart';
 import 'package:foodshare/models/category.dart';
-import 'package:foodshare/models/loginusermodel.dart';
+// import 'package:foodshare/models/loginusermodel.dart';
 import 'package:foodshare/models/subcategory.dart';
 import 'package:foodshare/services/categoryselectionservice.dart';
 import 'package:foodshare/services/categoryservice.dart';
@@ -93,9 +93,7 @@ class CartService extends ChangeNotifier {
       CartItem cartItem =
           _items.firstWhere((CartItem item) => item.category!.name == cat.name);
 
-      if (cartItem != null) {
-        subCat = cartItem.category as SubCategory?;
-      }
+      subCat = cartItem.category as SubCategory?;
     }
 
     return subCat;
@@ -121,26 +119,29 @@ class CartService extends ChangeNotifier {
           .doc(loginService.loggedInUserModel!.uid)
           .get()
           .then((DocumentSnapshot snapshot) {
-        Map<String, dynamic> cartItems = snapshot.get(FieldPath(['cartItems']));
+        if (snapshot.exists) {
+          Map<String, dynamic> cartItems =
+              snapshot.get(FieldPath(['cartItems']));
 
-        catService.getCategories().forEach((Category cat) {
-          cat.subCategories!.forEach((Category subCat) {
-            if (cartItems.keys.contains(subCat.imgName)) {
-              var amount = cartItems[subCat.imgName] as int;
-              (subCat as SubCategory).amount = amount;
-              _items.add(CartItem(category: subCat));
+          catService.getCategories().forEach((Category cat) {
+            cat.subCategories!.forEach((Category subCat) {
+              if (cartItems.keys.contains(subCat.imgName)) {
+                var amount = cartItems[subCat.imgName] as int;
+                (subCat as SubCategory).amount = amount;
+                _items.add(CartItem(category: subCat));
 
-              // force resetting the selected subcategory to trigger a rebuild on the unit price widget
-              if (categorySelectionService.selectedSubCategory != null &&
-                  categorySelectionService.selectedSubCategory!.name ==
-                      subCat.name) {
-                categorySelectionService.selectedSubCategory = subCat;
+                // force resetting the selected subcategory to trigger a rebuild on the unit price widget
+                if (categorySelectionService.selectedSubCategory != null &&
+                    categorySelectionService.selectedSubCategory!.name ==
+                        subCat.name) {
+                  categorySelectionService.selectedSubCategory = subCat;
+                }
               }
-            }
+            });
           });
-        });
 
-        notifyListeners();
+          notifyListeners();
+        }
       });
     }
   }

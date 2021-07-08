@@ -3,7 +3,7 @@ import 'package:foodshare/helpers/appcolors.dart';
 import 'package:foodshare/helpers/iconhelper.dart';
 import 'package:foodshare/helpers/utils.dart';
 import 'package:foodshare/models/onboardingcontent.dart';
-import 'package:foodshare/pages/categorylistpage.dart';
+// import 'package:foodshare/pages/categorylistpage.dart';
 import 'package:foodshare/widgets/iconfont.dart';
 import 'package:foodshare/widgets/mainappbar.dart';
 import 'package:foodshare/widgets/themebutton.dart';
@@ -74,7 +74,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                         size: 40),
                                   ),
                                   Image.asset(
-                                      'assets/imgs/${_content[index].img}.png'),
+                                      'assets/images/${_content[index].img}.png'),
                                   SizedBox(height: 20),
                                   Text(_content[index].message!,
                                       textAlign: TextAlign.center,
@@ -129,7 +129,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   onClick: () {
                     Utils.mainAppNav.currentState!.pushNamed('/mainpage');
                   },
-                  label: 'Saltar Onboarding')
+                  label: 'Skip Onboarding')
             ],
           ),
         )));

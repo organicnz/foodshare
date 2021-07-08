@@ -8,6 +8,7 @@ import 'package:foodshare/widgets/categoryicon.dart';
 import 'package:foodshare/widgets/mainappbar.dart';
 import 'package:provider/provider.dart';
 
+// ignore: must_be_immutable
 class SelectedCategoryPage extends StatelessWidget {
   Category? selectedCategory;
 
@@ -53,7 +54,7 @@ class SelectedCategoryPage extends StatelessWidget {
                       children: [
                         ClipOval(
                           child: Image.asset(
-                              'assets/imgs/' +
+                              'assets/images/' +
                                   this
                                       .selectedCategory!
                                       .subCategories![index]

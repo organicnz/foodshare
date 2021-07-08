@@ -7,6 +7,7 @@ import 'package:foodshare/services/categoryservice.dart';
 import 'package:foodshare/widgets/iconfont.dart';
 import 'package:provider/provider.dart';
 
+// ignore: must_be_immutable
 class SplashPage extends StatelessWidget {
   int? duration = 0;
   String? goToPage;
@@ -20,6 +21,7 @@ class SplashPage extends StatelessWidget {
 
     Future.delayed(Duration(seconds: this.duration!), () async {
       // await for the Firebase initialization to occur
+      // ignore: unused_local_variable
       FirebaseApp app = await Firebase.initializeApp();
 
       catService.getCategoriesCollectionFromFirebase().then((value) {

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 const int MAX_VALUE = 20;
 const int MIN_VALUE = 0;
 
+// ignore: must_be_immutable
 class UnitPriceWidget extends StatelessWidget {
   Color? themeColor;
   int amount = 0;

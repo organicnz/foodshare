@@ -95,7 +95,7 @@ class ShoppingListPage extends StatelessWidget {
                         children: [
                           ClipOval(
                             child: Image.asset(
-                                './assets/imgs/' +
+                                './assets/images/' +
                                     itemSubCategory.imgName! +
                                     '.png',
                                 width: 50,

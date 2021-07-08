@@ -15,6 +15,7 @@ import 'package:foodshare/widgets/unitpricewidget.dart';
 import 'package:foodshare/helpers/utils.dart';
 import 'package:provider/provider.dart';
 
+// ignore: must_be_immutable
 class DetailsPage extends StatefulWidget {
   SubCategory? subCategory;
 
@@ -43,7 +44,7 @@ class DetailsPageState extends State<DetailsPage> {
                     height: 300,
                     decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: AssetImage('assets/imgs/' +
+                            image: AssetImage('assets/images/' +
                                 widget.subCategory!.imgName! +
                                 '_desc.png'),
                             fit: BoxFit.cover)),

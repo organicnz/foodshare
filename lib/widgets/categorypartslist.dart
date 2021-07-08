@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:foodshare/models/categorypart.dart';
 import 'package:foodshare/models/subcategory.dart';
 
+// ignore: must_be_immutable
 class CategoryPartsList extends StatefulWidget {
   SubCategory? subCategory;
 
@@ -51,7 +52,7 @@ class CategoryPartsListState extends State<CategoryPartsList> {
                                       : null,
                               borderRadius: BorderRadius.circular(25),
                               image: DecorationImage(
-                                  image: AssetImage('assets/imgs/' +
+                                  image: AssetImage('assets/images/' +
                                       widget
                                           .subCategory!.parts[index].imgName! +
                                       '.png'),

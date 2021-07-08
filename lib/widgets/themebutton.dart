@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:foodshare/helpers/appcolors.dart';
 
+// ignore: must_be_immutable
 class ThemeButton extends StatelessWidget {
   String? label;
   Function onClick;

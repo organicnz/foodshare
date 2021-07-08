@@ -4,6 +4,7 @@ import 'package:foodshare/models/loginusermodel.dart';
 import 'package:foodshare/services/loginservice.dart';
 import 'package:provider/provider.dart';
 
+// ignore: must_be_immutable
 class MapUserBadge extends StatelessWidget {
   bool? isSelected;
 

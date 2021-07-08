@@ -19,6 +19,7 @@ const double CAMERA_BEARING = 30;
 const double PIN_VISIBLE_POSITION = 20;
 const double PIN_INVISIBLE_POSITION = -220;
 
+// ignore: must_be_immutable
 class MapPage extends StatefulWidget {
   SubCategory? subCategory;
 
@@ -55,11 +56,11 @@ class _MapPageState extends State<MapPage> {
 
     sourceIcon = await BitmapDescriptor.fromAssetImage(
         ImageConfiguration(devicePixelRatio: 2.0),
-        'assets/imgs/source_pin${Utils.deviceSuffix(context)}.png');
+        'assets/images/source_pin${Utils.deviceSuffix(context)}.png');
 
     destinationIcon = await BitmapDescriptor.fromAssetImage(
         ImageConfiguration(devicePixelRatio: 2.0),
-        'assets/imgs/destination_pin_${parentCat}${Utils.deviceSuffix(context)}.png');
+        'assets/images/destination_pin_$parentCat${Utils.deviceSuffix(context)}.png');
   }
 
   void setInitialLocation() {

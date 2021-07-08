@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'categoryicon.dart';
 
+// ignore: must_be_immutable
 class MapBottomPill extends StatelessWidget {
   SubCategory? subCategory;
 
@@ -37,7 +38,7 @@ class MapBottomPill extends StatelessWidget {
                       children: [
                         ClipOval(
                           child: Image.asset(
-                              'assets/imgs/${this.subCategory!.imgName}.png',
+                              'assets/images/${this.subCategory!.imgName}.png',
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover),
@@ -85,7 +86,7 @@ class MapBottomPill extends StatelessWidget {
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(50),
                           image: DecorationImage(
-                              image: AssetImage('assets/imgs/farmer.jpeg'),
+                              image: AssetImage('assets/images/farmer.jpeg'),
                               fit: BoxFit.cover),
                           border: Border.all(
                               color: this.subCategory!.color!, width: 4)),

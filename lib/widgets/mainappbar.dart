@@ -6,6 +6,7 @@ import 'package:foodshare/widgets/userprofileheader.dart';
 
 import 'iconfont.dart';
 
+// ignore: must_be_immutable
 class MainAppBar extends StatefulWidget implements PreferredSizeWidget {
   Color themeColor;
   bool showProfilePic;

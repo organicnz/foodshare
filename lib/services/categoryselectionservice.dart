@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:foodshare/models/cartitem.dart';
+// import 'package:foodshare/models/cartitem.dart';
 import 'package:foodshare/models/category.dart';
 import 'package:foodshare/models/subcategory.dart';
 import 'package:foodshare/services/cartservice.dart';
