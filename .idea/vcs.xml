@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/foodshare-app" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/foodshare-backend" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/foodshare-runner" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/foodshare-tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/foodshare-web" vcs="Git" />
+  </component>
+</project>

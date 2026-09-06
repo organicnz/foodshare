@@ -1,0 +1,34 @@
+# Cloudflare Tunnel reverse proxy for foodshare frontend
+# Runs rootless via Quadlet — no need to bind low ports on the host
+# Proxies to the foodshare-web container on 127.0.0.1:3000
+
+# Prerequisites (run once):
+#   podman secret create cf_tunnel_token <token>  # or use EnvironmentFile below
+
+# ~/.config/containers/systemd/foodshare-cloudflared.container
+[Unit]
+Description=Cloudflare Tunnel for Foodshare frontend
+After=foodshare-network.service foodshare-web.container
+Requires=foodshare-web.container
+Binds=foodshare-web.container  # wait for web to be healthy first
+
+[Container]
+Image=cloudflare/cloudflared:latest
+ContainerName=foodshare-cloudflared
+Network=foodshare.network
+PublishPort=127.0.0.1:2000:2000/tcp  # metrics port — optional, can remove if unused
+EnvironmentFile=%h/.config/foodshare/cloudflared.env
+# Alternatively, use a secret:
+# Secret=cf_tunnel_token,type=env,target=CLOUDFLARE_TUNNEL_TOKEN
+
+# The tunnel runs in the background; cloudflared handles the HTTP->HTTPS routing
+Command=tunnel --metrics 0.0.0.0:2000 run foodshare-web-club
+
+Restart=always
+TimeoutStartSec=30
+
+[Service]
+Type=notify
+
+[Install]
+WantedBy=default.target

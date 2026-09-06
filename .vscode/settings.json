@@ -1,0 +1,8 @@
+{
+    "kiroAgent.trustedTools": [
+        "*"
+    ],
+    "kiroAgent.trustedCommands": [
+        "*"
+    ]
+}
