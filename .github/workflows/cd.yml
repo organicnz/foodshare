@@ -1,0 +1,34 @@
+name: CD Staging
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH to VPS
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".config/containers/systemd/*"
+          target: "~/.config/containers/systemd/"
+
+      - name: Run Deployment
+        run: |
+          chmod +x DEPLOY-PRODUCTION.sh
+          ./DEPLOY-PRODUCTION.sh
+
+      - name: Verify Health
+        run: |
+          curl -I https://foodshare.club
+          # Should return 200 OK with Cloudflare Ray ID

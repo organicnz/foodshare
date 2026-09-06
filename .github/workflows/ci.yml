@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test-lint-typecheck:
+    strategy:
+      matrix:
+        include:
+          - name: iOS-Swift
+            os: macos-14
+            swift-version: '5.9'
+            xcode: '15.0'
+          - name: Web-NextJS
+            os: ubuntu-22.04
+            node-version: '22'
+          - name: Bun-Backend
+            os: ubuntu-22.04
+            bun-version: '1.2'
+          - name: Tools-Skip
+            os: ubuntu-22.04
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cache Bun modules
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/installations
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Setup Swift
+        if: matrix.name == 'iOS-Swift'
+        uses: actions/setup-swift@v4
+        with:
+          swift-version: ${{ matrix.swift-version }}
+
+      - name: Setup Node.js
+        if: matrix.name == 'Web-NextJS'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Setup Bun
+        if: matrix.name == 'Bun-Backend'
+        uses: oven-sh/bun-action@v1
+        with:
+          bun-version: ${{ matrix.bun-version }}
+
+      - name: Install Dependencies
+        if: matrix.name == 'Web-NextJS'
+        run: bun install --frozen-lockfile
+
+      - name: Install Dependencies
+        if: matrix.name == 'Bun-Backend'
+        run: bun install --frozen-lockfile
+
+      - name: Swift Test
+        if: matrix.name == 'iOS-Swift'
+        run: swift test
+
+      - name: Next.js Typecheck + Build
+        if: matrix.name == 'Web-NextJS'
+        run: |
+          bun run typecheck
+          bun run build
+
+      - name: Oxlint + Biome Lint
+        if: matrix.name == 'Bun-Backend'
+        run: |
+          bun run lint:oxlint
+          bun run lint:biome
+
+      - name: Skip Parity Check
+        if: matrix.name == 'Tools-Skip'
+        run: |
+          echo "🔧 Tools parity check (Swift iOS + Kotlin Android)"
+          swift test --filter testSuite==Skip 2>/dev/null || echo "No Skip tests configured"

@@ -1,0 +1,35 @@
+name: Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths: ['.config/containers/systemd/*']
+
+jobs:
+  apply-quadlet:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH to VPS
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".config/containers/systemd/*"
+          target: "~/.config/containers/systemd/"
+
+      - name: Reload Systemd User
+        run: |
+          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user daemon-reload"
+          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-network.service"
+          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-web.service"
+          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-cloudflared.service"
+
+      - name: Verify
+        run: |
+          ssh organic@${{ secrets.VPS_HOST }} "curl -I https://foodshare.club"
+          # Should return 200 OK + Cloudflare Ray ID
