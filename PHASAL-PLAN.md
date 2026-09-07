@@ -177,3 +177,29 @@ The phasal plan execution is complete with all verified steps. The codebase main
 ### 5.5 Commit & push (programmatic) + CI watch
 - Per-repo conventional commits + pushes (web/app/backend/tools), then parent superproject (gitlinks + workflows + quadlet + this plan).
 - `gh run list` / `gh run watch` per repo until green; `DAY2-OPS-CARD.md` to be updated with actual findings post-deploy.
+
+---
+
+## Phase 6: CI-Driven Test + Infra Hardening (2026-09-07) ✅✅✅
+**Goal**: Turn CI red→green with evidence; unblock Docker→Quadlet cutover.
+
+### 6.1 Web `Validate (test)` red→green
+- **Symptom**: 3 files errored (`actions/products`, `lib/data/profiles`, `lib/data/products`) with `SyntaxError: Export named 'createCachedClient' not found` — failing on main since ~Sep 3, invisible locally (bun 1.4.2 isolates `mock.module` per file; CI shared-registry behavior differs).
+- **Fix**: completed the `@/lib/supabase/server` mock export surface (`createClient`/`createCachedClient`/`createServerClient`) in `actions/products`, `actions/telegram`, `api/admin-email-auth` to match the `admin.test.ts` gold standard. Additive only.
+- **Result**: `Validate (test): success` (314→ green), lint/typecheck/biome/oxlint success. Full `bun run build` still needs live Supabase env locally (pre-existing); segment-config + proxy-only fixes verified in CI build path.
+
+### 6.2 Quadlet env-layout blocker fixed
+- **Symptom**: env files lived in `.config/containers/systemd/` as `foodshare-*.env`, but units reference `%h/.config/foodshare/{web,cloudflared}.env` — containers would start env-less on VPS.
+- **Fix**: `git mv` → `.config/foodshare/{web,cloudflared}.env` (`chmod 600`); `cd.yml`/`infrastructure.yml` now sync both dirs; `DEPLOY-PRODUCTION.sh` regenerates the FIXED cloudflared unit (was reintroducing `Type=notify`/`Binds=`/`:2000` via heredoc); migration plan + Day-2 card synced (tunnel health via `systemctl is-active`, no metrics port).
+- **Validated**: `bash -n`, `actionlint`, INI spec check (no `[Container]`-misplaced keys).
+
+### 6.3 CI watch results (programmatic via `gh`)
+- **tools** CI: ✅ success. **backend** CI/CD: ✅ success. **app**: Code Quality ✅, Maestro E2E ✅, Quick Feedback ✅; Android APK + Unit Tests ❌ pre-existing (`SKIP_PREBUILD_FAILED:127` — `skip` CLI missing on runner; `Main.kt` unresolved `skip` refs; baseline Sep 6 also red; needs runner toolchain fix, not code).
+- **web**: test/lint ✅; `type-check` job cancelled by runner infra flake (tsc clean locally).
+- Parent superproject has no remote (local-only orchestrator by design); all 4 domain repos pushed to `Foodshareclub/*`.
+
+### Next (requires VPS SSH — manual, documented in DAY2-OPS-CARD)
+1. `systemctl --user daemon-reload && enable --now` the three units; `curl -I https://foodshare.club`.
+2. Keep Docker Supabase stack as rollback (Phase 2 stays Docker per strategy).
+3. Fix Android runner: install `skip` CLI (resolves `SKIP_PREBUILD_FAILED:127`).
+4. Consider pinning web `BUN_VERSION: latest` → exact for deterministic CI.
