@@ -6,7 +6,7 @@
 | Service | Image | Ports | Key Config |
 |---|---|---|---|
 | **foodshare-web** | `ghcr.io/foodshareclub/foodshare-web:latest` | 3000/TCP | Next.js, `.env.production`, Cloudflared tunnel |
-| **foodshare-cloudflared** | `cloudflare/cloudflared:latest` | 2000/TCP (metrics) | Tunnel `foodshare-web-club` → web container |
+| **foodshare-cloudflared** | `cloudflare/cloudflared:latest` | none (tunnel egress only) | Tunnel `foodshare-web-club` → web container |
 | **supabase-stack** | Self-hosted (15 services) | Variety | Postgres + Kong + Auth + Rest + Functions + Analytics on `supabase-network` |
 | **foodshare-runner** | GitHub runner image | Varies | CI runners, org + personal profiles |
 
@@ -70,29 +70,31 @@ Type=notify
 WantedBy=default.target
 ```
 
-### 3. Cloudflare Tunnel
+### 3. Cloudflare Tunnel (hardened 2026-09-07: `Type=simple`, `BindsTo=`, no metrics port)
 ```ini
 # ~/.config/containers/systemd/foodshare-cloudflared.container
 [Unit]
 Description=Cloudflare Tunnel for Foodshare frontend
-After=foodshare-network.service foodshare-web.container
-Requires=foodshare-web.container
-Binds=foodshare-web.container
+After=foodshare-network.service foodshare-web.service
+Requires=foodshare-web.service
+# Wait for web to be healthy first (BindsTo stops tunnel if web stops)
+BindsTo=foodshare-web.service
 
 [Container]
 Image=cloudflare/cloudflared:latest
 ContainerName=foodshare-cloudflared
 Network=foodshare.network
-PublishPort=127.0.0.1:2000:2000/tcp
 EnvironmentFile=%h/.config/foodshare/cloudflared.env
+# Alternatively, use a secret:
+# Secret=cf_tunnel_token,type=env,target=CLOUDFLARE_TUNNEL_TOKEN
 
-Command=tunnel --metrics 0.0.0.0:2000 run foodshare-web-club
-
-Restart=always
-TimeoutStartSec=30
+# The tunnel runs in the background; cloudflared handles the HTTP->HTTPS routing
+Command=tunnel --no-autoupdate run foodshare-web-club
 
 [Service]
-Type=notify
+Restart=always
+TimeoutStartSec=60
+Type=simple
 
 [Install]
 WantedBy=default.target
@@ -138,7 +140,7 @@ chmod 600 ~/.config/foodshare/cloudflared.env
 systemctl --user daemon-reload
 systemctl --user start foodshare-network.service
 systemctl --user start foodshare-web.service      # starts on 127.0.0.1:3000
-systemctl --user start foodshare-cloudflared.service # starts cloudflared on 127.0.0.1:2000
+systemctl --user start foodshare-cloudflared.service # starts cloudflared tunnel (no exposed ports)
 ```
 
 ### Step 2 — Verify health + tunnel
@@ -149,8 +151,8 @@ curl -f http://127.0.0.1:3000/ || exit 1
 # Check cloudflared is running
 journalctl --user -u foodshare-cloudflared.service -n 20 --no-pager
 
-# Test local metrics (optional)
-curl -sf http://127.0.0.1:2000/metrics
+# Verify tunnel service is active
+systemctl --user is-active foodshare-cloudflared.service
 ```
 
 ### Step 3 — Update Cloudflare dashboard (if DNS changed)
@@ -258,7 +260,7 @@ docker compose -f /path/to/foodshare-web/docker-compose.yml down -v
 | **Cutover Step 5** | "Flip the host-level reverse proxy" | "Update cloudflared tunnel target in Cloudflare Dashboard" — no host-level proxy needed |
 | **Env files** | Generic `web.env` placeholder | Two env files: `web.env` (frontend) + `cloudflared.env` (tunnel token) |
 | **Rollback Step 8** | Generic `docker compose down` | Explicit `docker compose down -v` only after 2+ weeks; `docker stop` recommended before |
-| **Health checks** | Generic `curl -f http://localhost:3000/` | Both web health (`/`) + cloudflared metrics (`/metrics`) + optional end-to-end `curl -I https://foodshare.club` |
+| **Health checks** | Generic `curl -f http://localhost:3000/` | Web health (`/`) + `systemctl is-active` for tunnel + optional end-to-end `curl -I https://foodshare.club` |
 | **Unit dependencies** | `After=foodshare-network.service` | Cloudflared also `Requires=foodshare-web.container` and `Binds=foodshare-web.container` |
 
 ---

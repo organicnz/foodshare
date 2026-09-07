@@ -8,7 +8,7 @@
 | Web container health | `journalctl --user -u foodshare-web.service --no-pager -n 5` | No ERROR lines, HealthStatus=healthy |
 | Cloudflared status | `journalctl --user -u foodshare-cloudflared.service --no-pager -n 5` | Tunnel running, no CRIT errors |
 | Web reachable (localhost) | `curl -sf http://127.0.0.1:3000/` | Returns 200 or Next.js page HTML |
-| Cloudflared metrics | `curl -sf http://127.0.0.1:2000/metrics` | Returns metrics text (200) |
+| Cloudflared tunnel | `cloudflared tunnel --config /dev/null info foodshare-web-club` or Cloudflare dashboard | Tunnel healthy, 4 connections |
 | End-to-end (HTTPS) | `curl -I https://foodshare.club` | 200 OK, Cloudflare Ray ID visible |
 | Network alive | `podman network inspect foodshare` | `Name: foodshare`, Containers listed |
 

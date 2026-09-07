@@ -30,6 +30,15 @@ jobs:
           source: ".config/containers/systemd/*"
           target: "~/.config/containers/systemd/"
 
+      - name: Copy env files to VPS
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".config/foodshare/*"
+          target: "~/.config/foodshare/"
+
       - name: Reload Systemd User
         uses: appleboy/ssh-action@v1.0.3
         with:

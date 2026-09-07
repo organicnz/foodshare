@@ -113,23 +113,26 @@ cat > "$QUADLET_DIR/foodshare-cloudflared.container" <<'EOF'
 
 [Unit]
 Description=Cloudflare Tunnel for Foodshare frontend
-After=foodshare-network.service foodshare-web.container
-Requires=foodshare-web.container
-Binds=foodshare-web.container
+After=foodshare-network.service foodshare-web.service
+Requires=foodshare-web.service
+# Wait for web to be healthy first (BindsTo stops tunnel if web stops)
+BindsTo=foodshare-web.service
 
 [Container]
 Image=cloudflare/cloudflared:latest
 ContainerName=foodshare-cloudflared
 Network=foodshare.network
-PublishPort=127.0.0.1:2000:2000/tcp
 EnvironmentFile=%h/.config/foodshare/cloudflared.env
-Command=tunnel --metrics 0.0.0.0:2000 run foodshare-web-club
+# Alternatively, use a secret:
+# Secret=cf_tunnel_token,type=env,target=CLOUDFLARE_TUNNEL_TOKEN
 
-Restart=always
-TimeoutStartSec=30
+# The tunnel runs in the background; cloudflared handles the HTTP->HTTPS routing
+Command=tunnel --no-autoupdate run foodshare-web-club
 
 [Service]
-Type=notify
+Restart=always
+TimeoutStartSec=60
+Type=simple
 
 [Install]
 WantedBy=default.target
@@ -233,14 +236,13 @@ else
   echo "  ⚠ Web container at http://127.0.0.1:3000/ returned HTTP $HTTP_CODE (may still be starting)"
 fi
 
-# Cloudflare tunnel metrics (optional)
+# Cloudflare tunnel liveness via systemd (metrics port removed from unit)
 echo ""
-echo "  → Testing cloudflared metrics at 127.0.0.1:2000..."
-METRICS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:2000/metrics 2>/dev/null || echo "000")
-if [[ "$METRICS_CODE" == "200" ]]; then
-  echo "  ✓ Cloudflared metrics endpoint reachable (HTTP $METRICS_CODE)"
+echo "  → Checking cloudflared service state..."
+if systemctl --user is-active --quiet foodshare-cloudflared.service 2>/dev/null; then
+  echo "  ✓ foodshare-cloudflared.service active"
 else
-  echo "  ⚠ Cloudflared metrics at http://127.0.0.1:2000/metrics returned HTTP $METRICS_CODE (tunnel may still be provisioning)"
+  echo "  ⚠ foodshare-cloudflared.service not active (tunnel may still be provisioning)"
 fi
 
 # -------------------------------------------------------------------------
