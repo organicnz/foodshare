@@ -4,6 +4,13 @@ on:
   push:
     tags: ['v*']
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-22.04
@@ -15,16 +22,10 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Semantic Release
-        uses: cypress-io/github-action-semantic-release@v2
+        uses: cycjimmy/semantic-release-action@v4
         with:
-          aigithubtoken: ${{ secrets.GITHUB_TOKEN }}
-          tag_format: 'v1.0.0'
-
-      - name: Generate Changelog
-        run: |
-          git log --oneline v1.0.0..HEAD --no-merges > CHANGELOG.md
-
-      - name: Publish Release
-        run: |
-          git push origin main --follow-tags
-          git push origin main CHANGELOG.md
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

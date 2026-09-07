@@ -5,15 +5,23 @@ on:
     branches: [main]
     paths: ['.config/containers/systemd/*']
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   apply-quadlet:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: SSH to VPS
+      - name: Copy Quadlet units to VPS
         uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -23,13 +31,24 @@ jobs:
           target: "~/.config/containers/systemd/"
 
       - name: Reload Systemd User
-        run: |
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user daemon-reload"
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-network.service"
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-web.service"
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-cloudflared.service"
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            systemctl --user daemon-reload
+            systemctl --user enable --now foodshare-network.service
+            systemctl --user enable --now foodshare-web.service
+            systemctl --user enable --now foodshare-cloudflared.service
 
       - name: Verify
-        run: |
-          ssh organic@${{ secrets.VPS_HOST }} "curl -I https://foodshare.club"
-          # Should return 200 OK + Cloudflare Ray ID
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            curl --fail --retry 5 --retry-delay 10 -I https://foodshare.club
+            # Should return 200 OK + Cloudflare Ray ID
