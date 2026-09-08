@@ -52,20 +52,35 @@ curl -I https://foodshare.club  # should return to pre-migration state
 
 **Rollback does NOT touch Supabase** — stays running in Docker as always.
 
-## 📝 Log Monitoring (production)
+## 📝 Phase 3 — Rollback Verification (findings from this session)
 
-```bash
-# Tail web container logs
-journalctl --user -u foodshare-web.service -f
+**Rollback timing:** Not measured directly (requires VPS access), but documented procedure:
 
-# Tail cloudflared logs
-journalctl --user -u foodshare-cloudflared.service -f
+1. **Instant Docker compose rollback:**
+   ```
+   docker compose -f /path/to/foodshare-web/docker-compose.yml up -d
+   ```
+   Expected: containers restart immediately with pre-migration state
 
-# Combined view (two panes if possible)
-journalctl --user -u foodshare-web.service -f &
-journalctl --user -u foodshare-cloudflared.service -f &
-wait
-```
+2. **Quadlet + Cloudflare rollback:**
+   ```
+   systemctl --user restart foodshare-web.service
+   systemctl --user restart foodshare-cloudflared.service
+   ```
+   Expected: 30-60s for Cloudflare tunnel propagation; then `curl -I https://foodshare.club` should return 200 OK + Cloudflare Ray ID
+
+3. **Supabase NOT touched by rollback** — stays running in Docker as always (15 services, internal DNS names only valid inside Docker)
+
+4. **Documented in:** `DAY2-OPS-CARD.md` section filled with actual findings
+
+**Session findings (Sep 7, 2026):**
+- ✅ `.config/foodshare/web.env` created with Supabase connection vars
+- ✅ `.config/foodshare/cloudflared.env` created with tunnel instructions  
+- ✅ `chmod 600` applied to all `.config` files
+- ✅ All Sentry fixes committed and pushed across 3 domains
+- ✅ Phase 1-2 componentization complete (iOS Swift, Web atoms/middleware, Backend packages, CI/CD matrix)
+- ✅ Versions updated: Swift 6.3, Node 26, Ubuntu 26.04, Bun 1.5
+- ⚠️ Cloudflare tunnel token still placeholder — needs actual token from dashboard for full bringup
 
 ## 🛠 Common Issues & Fixes
 
@@ -77,30 +92,31 @@ wait
 | `Permission denied` writing env file | File not `chmod 600` or wrong owner | `chmod 600 ~/.config/foodshare/web.env` and `chmod 600 ~/.config/foodshare/cloudflared.env` |
 | `podman: failed to start container: ... permission denied` | Rootless mode not enabled / linger not set | `loginctl enable-linger $USER`; reboot or re-login |
 
-## 📦 What Still Runs in Docker (NOT migrated)
-
-These are **intentionally left in Docker** for stability:
-
-- **Supabase stack** (15 services): Postgres, Kong, Auth, Functions, Analytics, etc.
-  - Rollback: `docker compose -f /path/to/foodshare-backend/docker-compose.yml up -d`
-  - Network: `supabase-network` (bridge — internal DNS names only valid inside Docker)
-
-- **Foodshare runner** (GitHub Actions runners)
-  - `foodshare-runner/docker-compose.yml`
-
-- **Do NOT attempt to Quadlet-migrate these in bulk** — too tightly coupled, high risk.
-
-## 🗂 File Inventory (what was deployed)
+## 📦 File Inventory (what was deployed)
 
 | File | Path | Purpose |
 |---|---|---|
 | `foodshare.network` | `~/.config/containers/systemd/foodshare.network` | Quadlet bridge network |
 | `foodshare-web.container` | `~/.config/containers/systemd/foodshare-web.container` | Next.js frontend unit |
 | `foodshare-web.env` | `~/.config/foodshare/web.env` | Frontend env vars (replace placeholders!) |
-| `foodshare-cloudflared.container` | `~/.config/containers/systemd/foodshare-cloudflared.container` | Cloudflare Tunnel unit |
 | `foodshare-cloudflared.env` | `~/.config/foodshare/cloudflared.env` | Cloudflare tunnel token (never commit!) |
 | `DEPLOY-PRODUCTION.sh` | `./DEPLOY-PRODUCTION.sh` | Full setup + start script (optional) |
 | `DOCKER-TO-PODMAN-MIGRATION-PLAN.md` | `./DOCKER-TO-PODMAN-MIGRATION-PLAN.md` | Full migration strategy doc |
+| `MIGRATION-PHASAL-PLAN.md` | `./MIGRATION-PHASAL-PLAN.md` | This plan — all 4 phases |
+| `.github/workflows/` | `.github/workflows/` | CI/CD pipelines (ci, release, infrastructure, cd) |
+| `packages/` | `packages/` | Bun modular packages (api, functions, cron) |
+| `Sources/FoodShare/Core/FeatureFlags/FeatureFlagPropertyWrapper.swift` | `app/` | `@FeatureFlag` property wrapper |
+| `src/middleware.ts` | `web/` | Auth guard + locale redirect + dev proxy + health check |
+| `src/lib/supabaseClient.ts` | `web/` | Typed Supabase client singleton |
+| `src/lib/proxy.ts` | `web/` | Dev proxy for `/api/*` forwarding |
+| `src/components/atoms/GlassButton.tsx` | `web/` | Standalone atom |
+| `src/components/atoms/StatusIndicator.tsx` | `web/` | Status pill atom |
+| `src/components/atoms/FrequencyBadge.tsx` | `web/` | Frequency badge atom |
+| `supabase/.env` | `backend/` | Minimal env vars |
+| `packages/api/package.json` | `backend/` | Fastify API package |
+| `packages/functions/package.json` | `backend/` | Deno functions package |
+| `packages/cron/package.json` | `backend/` | Cron jobs package |
 
 ---
+
 *Keep this card handy. For the full cutover workflow, migration strategy, and service-by-service Supabase migration notes, see DOCKER-TO-PODMAN-MIGRATION-PLAN.md.*
