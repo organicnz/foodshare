@@ -17,7 +17,7 @@ jobs:
             args: []
           - name: Web-NextJS
             os: ubuntu-22.04
-            node-version: '22'
+            node-version: '24'
             args: []
           - name: Bun-Backend
             os: ubuntu-22.04
