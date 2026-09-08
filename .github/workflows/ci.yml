@@ -29,14 +29,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
-      # Cache layer
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/installations
-          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
       
       - name: Install Dependencies
         if: matrix.name == 'Web-NextJS'
