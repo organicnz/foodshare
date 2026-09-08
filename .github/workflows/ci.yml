@@ -17,7 +17,7 @@ jobs:
             args: []
           - name: Web-NextJS
             os: ubuntu-22.04
-            node-version: '24'
+            node-version: '22'
             args: []
           - name: Bun-Backend
             os: ubuntu-22.04
@@ -30,21 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Dependencies
-        if: matrix.name == 'Web-NextJS'
-        run: bun install
-      
-      - name: Install Dependencies
-        if: matrix.name == 'Bun-Backend'
-        run: bun install
-      
-      - name: Swift Dependencies
-        if: matrix.name == 'iOS-Swift'
-        run: xcode-select --install 2>/dev/null || true
-      
       - name: Swift Test
         if: matrix.name == 'iOS-Swift'
-        run: swift test 2>&1 || echo "Swift test had issues (expected on some runners)"
+        run: swift test 2>&1 || echo "Swift test had issues"
       
       - name: Next.js Typecheck
         if: matrix.name == 'Web-NextJS'
@@ -53,9 +41,3 @@ jobs:
       - name: Oxlint + Biome
         if: matrix.name == 'Bun-Backend'
         run: bun run lint:oxlint && bun run lint:biome
-      
-      - name: Skip Transpile Check
-        if: matrix.name == 'Tools-Skip'
-        run: |
-          echo "Tools-Skip: skipping full transpile check (requires Skip CLI on runner)"
-          echo "This is expected on Ubuntu runners without Skip installed"
