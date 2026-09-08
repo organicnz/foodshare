@@ -5,24 +5,14 @@ on:
     types: [closed]
     branches: [main]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
 jobs:
   deploy-staging:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
-    environment: staging
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Copy Quadlet units to VPS
+      
+      - name: SSH to VPS
         uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -30,33 +20,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ".config/containers/systemd/*"
           target: "~/.config/containers/systemd/"
-
-      - name: Copy env files to VPS
-        uses: appleboy/scp-action@v0.1.5
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: organic
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".config/foodshare/*"
-          target: "~/.config/foodshare/"
-
-      - name: Run Deployment on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: organic
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -euo pipefail
-            chmod +x ~/.config/containers/systemd/deploy.sh 2>/dev/null || true
-            systemctl --user daemon-reload
-            systemctl --user enable --now foodshare-network.service
-            systemctl --user enable --now foodshare-web.service
-            systemctl --user enable --now foodshare-cloudflared.service
-            sleep 10
-            curl --fail --retry 5 --retry-delay 10 -I http://127.0.0.1:3000/
-
+      
+      - name: Run Deployment
+        run: |
+          chmod +x DEPLOY-PRODUCTION.sh
+          ./DEPLOY-PRODUCTION.sh
+      
       - name: Verify Health
         run: |
-          curl --fail --retry 5 --retry-delay 10 -I https://foodshare.club
-          # Should return 200 OK with Cloudflare Ray ID
+          curl -I https://foodshare.club
+          # Should return 200 with Cloudflare Ray ID

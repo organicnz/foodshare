@@ -4,28 +4,22 @@ on:
   push:
     tags: ['v*']
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
-permissions:
-  contents: write
-
 jobs:
   release:
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+      
       - name: Setup Semantic Release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/github-action-semantic-release@v4
         with:
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/git
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          aigithubtoken: ${{ secrets.GITHUB_TOKEN }}
+          tag-format: 'v1.0.0'
+          changelog-generator: github
+
+      - name: Verify Release
+        run: |
+          git log --oneline v1.0.0..HEAD --no-merges > /tmp/changelog.md
+          cat /tmp/changelog.md
