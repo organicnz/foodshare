@@ -1,4 +1,4 @@
-name: CI (re-triggered)
+name: CI
 
 on:
   push:
