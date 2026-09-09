@@ -38,9 +38,10 @@ jobs:
 
       - name: Resolve web SHA
         id: pins
+        working-directory: meta
         run: |
           set -euo pipefail
-          sha="$(git -C meta ls-tree HEAD foodshare-web | awk '{print $3}')"
+          sha="$(git ls-tree HEAD foodshare-web | awk '{print $3}')"
           test -n "$sha"
           echo "web_sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "pinned foodshare-web=${sha}"
@@ -87,9 +88,10 @@ jobs:
 
       - name: Resolve backend SHA
         id: pins
+        working-directory: meta
         run: |
           set -euo pipefail
-          sha="$(git -C meta ls-tree HEAD foodshare-backend | awk '{print $3}')"
+          sha="$(git ls-tree HEAD foodshare-backend | awk '{print $3}')"
           test -n "$sha"
           echo "backend_sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "pinned foodshare-backend=${sha}"
@@ -142,9 +144,10 @@ jobs:
 
       - name: Resolve app SHA
         id: pins
+        working-directory: meta
         run: |
           set -euo pipefail
-          sha="$(git -C meta ls-tree HEAD foodshare-app | awk '{print $3}')"
+          sha="$(git ls-tree HEAD foodshare-app | awk '{print $3}')"
           test -n "$sha"
           echo "app_sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "pinned foodshare-app=${sha}"
@@ -177,9 +180,10 @@ jobs:
 
       - name: Resolve web SHA
         id: pins
+        working-directory: meta
         run: |
           set -euo pipefail
-          sha="$(git -C meta ls-tree HEAD foodshare-web | awk '{print $3}')"
+          sha="$(git ls-tree HEAD foodshare-web | awk '{print $3}')"
           test -n "$sha"
           echo "web_sha=${sha}" >> "$GITHUB_OUTPUT"
 
