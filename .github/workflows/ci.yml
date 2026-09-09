@@ -96,36 +96,62 @@ jobs:
           echo "backend_sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "pinned foodshare-backend=${sha}"
 
+      - name: Verify pin registration
+        working-directory: meta
+        run: |
+          set -euo pipefail
+          git config -f .gitmodules --get submodule.foodshare-backend.url | grep -q 'Foodshareclub/foodshare-backend'
+          git ls-tree HEAD foodshare-backend | grep -qE '^[0-9]+ commit [0-9a-f]{40}$'
+          echo "pin registered"
+
+      - name: Check mirror token
+        id: auth
+        run: |
+          if [ -n "${{ secrets.FOODSHARECLUB_READ_TOKEN }}" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::FOODSHARECLUB_READ_TOKEN not set — pin checks only; full backend gates run in foodshare-backend CI. Add a fine-grained PAT (contents:read) as repo secret to enable."
+          fi
+
       - name: Checkout backend at pinned SHA
+        if: steps.auth.outputs.has_token == 'true'
         uses: actions/checkout@v5
         with:
           repository: Foodshareclub/foodshare-backend
           ref: ${{ steps.pins.outputs.backend_sha }}
+          token: ${{ secrets.FOODSHARECLUB_READ_TOKEN }}
           path: foodshare-backend
           fetch-depth: 1
-          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
+        if: steps.auth.outputs.has_token == 'true'
         with:
           bun-version: "1.2"
 
       - uses: denoland/setup-deno@v2
+        if: steps.auth.outputs.has_token == 'true'
         with:
           deno-version: v2.x
 
       - name: Install dependencies
+        if: steps.auth.outputs.has_token == 'true'
         run: bun install --frozen-lockfile
 
       - name: Lint (oxlint)
+        if: steps.auth.outputs.has_token == 'true'
         run: bun run lint:oxlint
 
       - name: Lint (biome)
+        if: steps.auth.outputs.has_token == 'true'
         run: bun run lint:biome
 
       - name: Typecheck
+        if: steps.auth.outputs.has_token == 'true'
         run: bun run typecheck
 
       - name: Test
+        if: steps.auth.outputs.has_token == 'true'
         run: bun run test
 
   app:
@@ -152,19 +178,40 @@ jobs:
           echo "app_sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "pinned foodshare-app=${sha}"
 
+      - name: Verify pin registration
+        working-directory: meta
+        run: |
+          set -euo pipefail
+          git config -f .gitmodules --get submodule.foodshare-app.url | grep -q 'Foodshareclub/foodshare-app'
+          git ls-tree HEAD foodshare-app | grep -qE '^[0-9]+ commit [0-9a-f]{40}$'
+          echo "pin registered"
+
+      - name: Check mirror token
+        id: auth
+        run: |
+          if [ -n "${{ secrets.FOODSHARECLUB_READ_TOKEN }}" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::FOODSHARECLUB_READ_TOKEN not set — pin checks only; full app gates run in foodshare-app CI. Add a fine-grained PAT (contents:read) as repo secret to enable."
+          fi
+
       - name: Checkout app at pinned SHA
+        if: steps.auth.outputs.has_token == 'true'
         uses: actions/checkout@v5
         with:
           repository: Foodshareclub/foodshare-app
           ref: ${{ steps.pins.outputs.app_sha }}
+          token: ${{ secrets.FOODSHARECLUB_READ_TOKEN }}
           path: foodshare-app
           fetch-depth: 1
-          persist-credentials: false
 
       - name: Swift version
+        if: steps.auth.outputs.has_token == 'true'
         run: swift --version
 
       - name: Swift test
+        if: steps.auth.outputs.has_token == 'true'
         run: swift test --parallel
 
   quadlet:
@@ -217,10 +264,10 @@ jobs:
       - name: Validate Sentry wiring
         run: |
           set -euo pipefail
-          test -f meta/.env.production.sentry
-          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' meta/.env.production.sentry
-          grep -q '^SENTRY_ORG=' meta/.env.production.sentry
-          grep -q '^SENTRY_PROJECT=' meta/.env.production.sentry
+          test -f meta/docs/.env.production.sentry
+          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' meta/docs/.env.production.sentry
+          grep -q '^SENTRY_ORG=' meta/docs/.env.production.sentry
+          grep -q '^SENTRY_PROJECT=' meta/docs/.env.production.sentry
           test -f foodshare-web/sentry.client.config.ts
           test -f foodshare-web/sentry.server.config.ts
           test -f foodshare-web/sentry.edge.config.ts

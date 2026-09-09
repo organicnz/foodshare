@@ -21,8 +21,9 @@ SERVICE_USER="${SUDO_USER:-${USER:-$(whoami)}}"
 USER_HOME="$(eval echo "~${SERVICE_USER}")"
 QUADLET_DIR="$USER_HOME/.config/containers/systemd"
 FOODSHARE_ENV="$USER_HOME/.config/foodshare"
-# Directory containing this script — the repo checkout (units live in .config/containers/systemd).
+# Directory containing this script (docs/); repo root is one level up.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "========================================="
 echo "Foodshare Quadlet Deployment — Production"
@@ -74,7 +75,7 @@ echo "✓ Rootless Podman is functional."
 echo ""
 echo ">>> Syncing Quadlet unit files..."
 
-REPO_UNITS="$SCRIPT_DIR/.config/containers/systemd"
+REPO_UNITS="$REPO_ROOT/.config/containers/systemd"
 if [ -d "$REPO_UNITS" ]; then
   cp -f "$REPO_UNITS/foodshare.network" "$QUADLET_DIR/foodshare.network"
   cp -f "$REPO_UNITS/foodshare-web.container" "$QUADLET_DIR/foodshare-web.container"
@@ -215,4 +216,4 @@ echo "Rollback (at any point):"
 echo "  • Docker:       docker compose -f /path/to/foodshare-web/docker-compose.yml up -d"
 echo "  • Quadlet:    systemctl --user restart foodshare-web.service foodshare-cloudflared.service"
 echo ""
-echo "Full cutover workflow: see DOCKER-TO-PODMAN-MIGRATION-PLAN.md"
+echo "Full cutover workflow: see docs/DOCKER-TO-PODMAN-MIGRATION-PLAN.md"

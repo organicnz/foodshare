@@ -24,7 +24,18 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Check deploy secrets
+        id: gate
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ] || [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VPS_HOST/SSH_PRIVATE_KEY not configured — skipping VPS deploy. Add repo secrets to enable CD."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Copy Quadlet units to VPS
+        if: steps.gate.outputs.configured == 'true'
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -35,6 +46,7 @@ jobs:
           strip_components: 3
 
       - name: Deploy via Quadlet
+        if: steps.gate.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -54,6 +66,7 @@ jobs:
             curl -sf http://127.0.0.1:3000/ > /dev/null
 
       - name: Verify public health
+        if: steps.gate.outputs.configured == 'true'
         run: |
           for i in 1 2 3 4 5 6; do
             if curl -sf -o /dev/null -w "%{http_code}\n" https://foodshare.club | grep -q 200; then

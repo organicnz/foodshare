@@ -448,7 +448,7 @@ git add \
   packages/                       # New Bun packages (if created)
   skip.yml                        # Skip config (if created)
   Package.swift                     # Swift packages (if created)
-  references/swift-kotlin-rules.md # Applied rules (if updated)
+  docs/references/swift-kotlin-rules.md # Applied rules (if updated)
 
 # Commit with descriptive message
 git commit -m "chore: 10x pro foodshare Quadlet migration +
