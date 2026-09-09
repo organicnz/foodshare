@@ -1,0 +1,20 @@
+[submodule "foodshare-app"]
+	path = foodshare-app
+	url = https://github.com/Foodshareclub/foodshare-app.git
+	branch = main
+[submodule "foodshare-backend"]
+	path = foodshare-backend
+	url = https://github.com/Foodshareclub/foodshare-backend.git
+	branch = main
+[submodule "foodshare-web"]
+	path = foodshare-web
+	url = https://github.com/Foodshareclub/foodshare-web.git
+	branch = main
+[submodule "foodshare-tools"]
+	path = foodshare-tools
+	url = https://github.com/Foodshareclub/foodshare-tools.git
+	branch = main
+[submodule "foodshare-runner"]
+	path = foodshare-runner
+	url = https://github.com/Foodshareclub/foodshare-runner.git
+	branch = main
