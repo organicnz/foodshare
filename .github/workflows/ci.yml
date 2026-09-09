@@ -13,6 +13,14 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# NOTE: The domain repos (Foodshareclub/*) are cloned explicitly with
+# persist-credentials:false (anonymous public read). The stock
+# `submodules: recursive` checkout fails on GitHub-hosted runners here:
+# the injected GITHUB_TOKEN basic-auth header makes github.com answer 404
+# for these cross-org submodule clones, while anonymous reads work.
+# SHAs are resolved from the superproject's gitlinks so jobs always test
+# exactly what root pins — no drift, no auth.
+
 jobs:
   web:
     name: Web-NextJS
@@ -21,10 +29,30 @@ jobs:
       run:
         working-directory: foodshare-web
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout meta (resolve pins)
+        uses: actions/checkout@v5
         with:
-          submodules: recursive
+          path: meta
           fetch-depth: 1
+          persist-credentials: false
+
+      - name: Resolve web SHA
+        id: pins
+        run: |
+          set -euo pipefail
+          sha="$(git -C meta ls-tree HEAD foodshare-web | awk '{print $3}')"
+          test -n "$sha"
+          echo "web_sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "pinned foodshare-web=${sha}"
+
+      - name: Checkout web at pinned SHA
+        uses: actions/checkout@v5
+        with:
+          repository: Foodshareclub/foodshare-web
+          ref: ${{ steps.pins.outputs.web_sha }}
+          path: foodshare-web
+          fetch-depth: 1
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -50,10 +78,30 @@ jobs:
       run:
         working-directory: foodshare-backend
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout meta (resolve pins)
+        uses: actions/checkout@v5
         with:
-          submodules: recursive
+          path: meta
           fetch-depth: 1
+          persist-credentials: false
+
+      - name: Resolve backend SHA
+        id: pins
+        run: |
+          set -euo pipefail
+          sha="$(git -C meta ls-tree HEAD foodshare-backend | awk '{print $3}')"
+          test -n "$sha"
+          echo "backend_sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "pinned foodshare-backend=${sha}"
+
+      - name: Checkout backend at pinned SHA
+        uses: actions/checkout@v5
+        with:
+          repository: Foodshareclub/foodshare-backend
+          ref: ${{ steps.pins.outputs.backend_sha }}
+          path: foodshare-backend
+          fetch-depth: 1
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -85,10 +133,30 @@ jobs:
       run:
         working-directory: foodshare-app
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout meta (resolve pins)
+        uses: actions/checkout@v5
         with:
-          submodules: recursive
+          path: meta
           fetch-depth: 1
+          persist-credentials: false
+
+      - name: Resolve app SHA
+        id: pins
+        run: |
+          set -euo pipefail
+          sha="$(git -C meta ls-tree HEAD foodshare-app | awk '{print $3}')"
+          test -n "$sha"
+          echo "app_sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "pinned foodshare-app=${sha}"
+
+      - name: Checkout app at pinned SHA
+        uses: actions/checkout@v5
+        with:
+          repository: Foodshareclub/foodshare-app
+          ref: ${{ steps.pins.outputs.app_sha }}
+          path: foodshare-app
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Swift version
         run: swift --version
@@ -100,12 +168,32 @@ jobs:
     name: Quadlet-Sentry-Infra
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout meta
+        uses: actions/checkout@v5
         with:
-          submodules: recursive
+          path: meta
           fetch-depth: 1
+          persist-credentials: false
+
+      - name: Resolve web SHA
+        id: pins
+        run: |
+          set -euo pipefail
+          sha="$(git -C meta ls-tree HEAD foodshare-web | awk '{print $3}')"
+          test -n "$sha"
+          echo "web_sha=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout web at pinned SHA
+        uses: actions/checkout@v5
+        with:
+          repository: Foodshareclub/foodshare-web
+          ref: ${{ steps.pins.outputs.web_sha }}
+          path: foodshare-web
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Validate Quadlet units
+        working-directory: meta
         run: |
           set -euo pipefail
           for unit in .config/containers/systemd/foodshare-web.container .config/containers/systemd/foodshare-cloudflared.container .config/containers/systemd/foodshare.network; do
@@ -125,10 +213,10 @@ jobs:
       - name: Validate Sentry wiring
         run: |
           set -euo pipefail
-          test -f .env.production.sentry
-          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' .env.production.sentry
-          grep -q '^SENTRY_ORG=' .env.production.sentry
-          grep -q '^SENTRY_PROJECT=' .env.production.sentry
+          test -f meta/.env.production.sentry
+          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' meta/.env.production.sentry
+          grep -q '^SENTRY_ORG=' meta/.env.production.sentry
+          grep -q '^SENTRY_PROJECT=' meta/.env.production.sentry
           test -f foodshare-web/sentry.client.config.ts
           test -f foodshare-web/sentry.server.config.ts
           test -f foodshare-web/sentry.edge.config.ts
@@ -137,6 +225,7 @@ jobs:
           echo "Sentry wiring valid"
 
       - name: Shellcheck deploy script
+        working-directory: meta
         run: |
           set -euo pipefail
           bash -n DEPLOY-PRODUCTION.sh
