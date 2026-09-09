@@ -264,20 +264,15 @@ jobs:
       - name: Validate Sentry wiring
         run: |
           set -euo pipefail
-          test -f meta/docs/.env.production.sentry
-          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' meta/docs/.env.production.sentry
-          grep -q '^SENTRY_ORG=' meta/docs/.env.production.sentry
-          grep -q '^SENTRY_PROJECT=' meta/docs/.env.production.sentry
+          test -f foodshare-web/.env.production.sentry
+          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' foodshare-web/.env.production.sentry
+          grep -q '^SENTRY_ORG=' foodshare-web/.env.production.sentry
+          grep -q '^SENTRY_PROJECT=' foodshare-web/.env.production.sentry
           test -f foodshare-web/sentry.client.config.ts
           test -f foodshare-web/sentry.server.config.ts
           test -f foodshare-web/sentry.edge.config.ts
           grep -q 'SENTRY_AUTH_TOKEN' foodshare-web/Dockerfile
           grep -q 'SENTRY_RELEASE' foodshare-web/Dockerfile
           echo "Sentry wiring valid"
-
-      - name: Shellcheck deploy script
-        working-directory: meta
-        run: |
-          set -euo pipefail
-          bash -n docs/DEPLOY-PRODUCTION.sh
-          echo "DEPLOY-PRODUCTION.sh syntax ok"
+        # NOTE: DEPLOY-PRODUCTION.sh now lives in the (private)
+        # foodshare-runner repo and is shellchecked by its own CI.
