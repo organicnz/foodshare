@@ -101,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           git config -f .gitmodules --get submodule.foodshare-backend.url | grep -q 'Foodshareclub/foodshare-backend'
-          git ls-tree HEAD foodshare-backend | grep -qE '^[0-9]+ commit [0-9a-f]{40}$'
+          git ls-tree HEAD foodshare-backend | grep -qE '^[0-9]+ commit [0-9a-f]{40}\s'
           echo "pin registered"
 
       - name: Check mirror token
@@ -183,7 +183,7 @@ jobs:
         run: |
           set -euo pipefail
           git config -f .gitmodules --get submodule.foodshare-app.url | grep -q 'Foodshareclub/foodshare-app'
-          git ls-tree HEAD foodshare-app | grep -qE '^[0-9]+ commit [0-9a-f]{40}$'
+          git ls-tree HEAD foodshare-app | grep -qE '^[0-9]+ commit [0-9a-f]{40}\s'
           echo "pin registered"
 
       - name: Check mirror token
@@ -279,5 +279,5 @@ jobs:
         working-directory: meta
         run: |
           set -euo pipefail
-          bash -n DEPLOY-PRODUCTION.sh
+          bash -n docs/DEPLOY-PRODUCTION.sh
           echo "DEPLOY-PRODUCTION.sh syntax ok"
