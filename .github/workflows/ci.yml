@@ -75,9 +75,6 @@ jobs:
   backend:
     name: Bun-Backend
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: foodshare-backend
     steps:
       - name: Checkout meta (resolve pins)
         uses: actions/checkout@v5
@@ -136,30 +133,32 @@ jobs:
 
       - name: Install dependencies
         if: steps.auth.outputs.has_token == 'true'
+        working-directory: foodshare-backend
         run: bun install --frozen-lockfile
 
       - name: Lint (oxlint)
         if: steps.auth.outputs.has_token == 'true'
+        working-directory: foodshare-backend
         run: bun run lint:oxlint
 
       - name: Lint (biome)
         if: steps.auth.outputs.has_token == 'true'
+        working-directory: foodshare-backend
         run: bun run lint:biome
 
       - name: Typecheck
         if: steps.auth.outputs.has_token == 'true'
+        working-directory: foodshare-backend
         run: bun run typecheck
 
       - name: Test
         if: steps.auth.outputs.has_token == 'true'
+        working-directory: foodshare-backend
         run: bun run test
 
   app:
     name: iOS-Swift
     runs-on: macos-14
-    defaults:
-      run:
-        working-directory: foodshare-app
     steps:
       - name: Checkout meta (resolve pins)
         uses: actions/checkout@v5
@@ -212,6 +211,7 @@ jobs:
 
       - name: Swift test
         if: steps.auth.outputs.has_token == 'true'
+        working-directory: foodshare-app
         run: swift test --parallel
 
   quadlet:
