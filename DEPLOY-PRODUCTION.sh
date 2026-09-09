@@ -16,10 +16,13 @@
 
 set -euo pipefail
 
-USER_HOME="${SUDO_USER:-$USER}"
-USER_HOME=$(eval echo "~$USER_HOST")
+# Resolve the service user's home robustly (works under sudo and direct login).
+SERVICE_USER="${SUDO_USER:-${USER:-$(whoami)}}"
+USER_HOME="$(eval echo "~${SERVICE_USER}")"
 QUADLET_DIR="$USER_HOME/.config/containers/systemd"
 FOODSHARE_ENV="$USER_HOME/.config/foodshare"
+# Directory containing this script — the repo checkout (units live in .config/containers/systemd).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "========================================="
 echo "Foodshare Quadlet Deployment — Production"
@@ -37,7 +40,15 @@ PODMAN_VER=$(podman --version 2>/dev/null || echo "unknown")
 echo "✓ Podman version: $PODMAN_VER"
 
 if ! command -v systemctl &>/dev/null; then
-  echo "❌ systemctl not found. This script requires systemd --user."
+  echo "systemctl not found. This script requires systemd --user."
+  exit 1
+fi
+
+# systemd --user needs a runtime dir; linger keeps it alive without login.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+loginctl enable-linger "$SERVICE_USER" 2>/dev/null || true
+if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+  echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR missing. Ensure linger is enabled and re-login."
   exit 1
 fi
 
@@ -58,86 +69,21 @@ fi
 echo "✓ Rootless Podman is functional."
 
 # -------------------------------------------------------
-# 2. Place Quadlet unit files
+# 2. Sync Quadlet unit files from the repo (single source of truth)
 # -------------------------------------------------------
 echo ""
-echo ">>> Installing Quadlet unit files..."
+echo ">>> Syncing Quadlet unit files..."
 
-# Network unit
-cat > "$QUADLET_DIR/foodshare.network" <<'EOF'
-[Network]
-NetworkName=foodshare
-EOF
-echo "  • foodshare.network"
-
-# Frontend container unit
-cat > "$QUADLET_DIR/foodshare-web.container" <<'EOF'
-[Unit]
-Description=Foodshare Next.js frontend
-After=foodshare-network.service
-Requires=foodshare-network.service
-
-[Container]
-Image=ghcr.io/foodshareclub/foodshare-web:latest
-ContainerName=foodshare-web
-Network=foodshare.network
-PublishPort=127.0.0.1:3000:3000
-EnvironmentFile=%h/.config/foodshare/web.env
-HealthCmd=curl -f http://localhost:3000/ || exit 1
-HealthInterval=15s
-HealthTimeout=5s
-HealthRetries=3
-HealthStartPeriod=20s
-Notify=healthy
-
-ReadOnly=true
-NoNewPrivileges=true
-DropCapability=ALL
-UserNS=keep-id
-
-[Service]
-Restart=always
-TimeoutStartSec=120
-Type=notify
-
-[Install]
-WantedBy=default.target
-EOF
-echo "  • foodshare-web.container"
-
-# Cloudflare Tunnel container
-cat > "$QUADLET_DIR/foodshare-cloudflared.container" <<'EOF'
-# Cloudflare Tunnel reverse proxy for foodshare frontend
-# Runs rootless via Quadlet — no need to bind low ports on the host
-# Proxies to the foodshare-web container on 127.0.0.1:3000
-
-[Unit]
-Description=Cloudflare Tunnel for Foodshare frontend
-After=foodshare-network.service foodshare-web.service
-Requires=foodshare-web.service
-# Wait for web to be healthy first (BindsTo stops tunnel if web stops)
-BindsTo=foodshare-web.service
-
-[Container]
-Image=cloudflare/cloudflared:latest
-ContainerName=foodshare-cloudflared
-Network=foodshare.network
-EnvironmentFile=%h/.config/foodshare/cloudflared.env
-# Alternatively, use a secret:
-# Secret=cf_tunnel_token,type=env,target=CLOUDFLARE_TUNNEL_TOKEN
-
-# The tunnel runs in the background; cloudflared handles the HTTP->HTTPS routing
-Command=tunnel --no-autoupdate run foodshare-web-club
-
-[Service]
-Restart=always
-TimeoutStartSec=60
-Type=simple
-
-[Install]
-WantedBy=default.target
-EOF
-echo "  • foodshare-cloudflared.container"
+REPO_UNITS="$SCRIPT_DIR/.config/containers/systemd"
+if [ -d "$REPO_UNITS" ]; then
+  cp -f "$REPO_UNITS/foodshare.network" "$QUADLET_DIR/foodshare.network"
+  cp -f "$REPO_UNITS/foodshare-web.container" "$QUADLET_DIR/foodshare-web.container"
+  cp -f "$REPO_UNITS/foodshare-cloudflared.container" "$QUADLET_DIR/foodshare-cloudflared.container"
+  echo "  • synced from $REPO_UNITS (repo is source of truth)"
+else
+  echo "  • repo units not found at $REPO_UNITS — run from a full checkout"
+  exit 1
+fi
 
 # -------------------------------------------------------
 # 3. Place environment files (user must fill these!)
@@ -162,6 +108,12 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Application URLs
 NEXT_PUBLIC_APP_URL=https://foodshare.club
 NEXT_PUBLIC_SITE_URL=https://foodshare.club
+
+# Observability (Sentry) — required for issue/PR correlation
+# NEXT_PUBLIC_SENTRY_DSN=https://o479112.ingest.sentry.io/560687
+# SENTRY_DSN=https://o479112.ingest.sentry.io/560687
+# SENTRY_ENVIRONMENT=production
+# SENTRY_RELEASE=3.0.2
 EOF
   chmod 600 "$FOODSHARE_ENV/web.env"
   echo "  ⚠ $FOODSHARE_ENV/web.env created — REPLACE placeholder values!"
@@ -192,25 +144,26 @@ fi
 echo ""
 echo ">>> Starting Quadlet stack..."
 
-# daemon-reload (as the user)
-if ! systemctl --user daemon-reload &>/dev/null; then
-  echo "⚠ daemon-reload had no output (may be first run — that's ok)."
-fi
+# daemon-reload (as the user) — must succeed, otherwise units are stale.
+systemctl --user daemon-reload
 
-# Start network first (prerequisite)
+# Start network first (prerequisite) — fail fast, no masking.
 echo "  → Starting foodshare-network.service..."
-systemctl --user start foodshare-network.service 2>/dev/null || true
+systemctl --user start foodshare-network.service
 sleep 2
+systemctl --user is-active --quiet foodshare-network.service
 
 # Start web container
 echo "  → Starting foodshare-web.service..."
-systemctl --user start foodshare-web.service 2>/dev/null || true
+systemctl --user restart foodshare-web.service
 sleep 3
+systemctl --user is-active --quiet foodshare-web.service
 
 # Start cloudflared tunnel
 echo "  → Starting foodshare-cloudflared.service..."
-systemctl --user start foodshare-cloudflared.service 2>/dev/null || true
+systemctl --user restart foodshare-cloudflared.service
 sleep 3
+systemctl --user is-active --quiet foodshare-cloudflared.service
 
 # -------------------------------------------------------
 # 5. Verification

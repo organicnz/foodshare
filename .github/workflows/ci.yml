@@ -6,38 +6,137 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-lint-typecheck:
-    strategy:
-      matrix:
-        include:
-          - name: iOS-Swift
-            os: macos-14
-            swift-version: '5.9'
-            args: []
-          - name: Web-NextJS
-            os: ubuntu-22.04
-            node-version: '22'
-            args: []
-          - name: Bun-Backend
-            os: ubuntu-22.04
-            bun-version: '1.4'
-            args: []
-          - name: Tools-Skip
-            os: ubuntu-22.04
-            args: []
-    runs-on: ${{ matrix.os }}
+  web:
+    name: Web-NextJS
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: foodshare-web
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Swift Test
-        if: matrix.name == 'iOS-Swift'
-        run: swift test 2>&1 || echo "Swift test had issues"
-      
-      - name: Next.js Typecheck
-        if: matrix.name == 'Web-NextJS'
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run type-check
+
+      - name: Lint (oxlint)
+        run: bun run lint:oxlint
+
+  backend:
+    name: Bun-Backend
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: foodshare-backend
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2"
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint (oxlint)
+        run: bun run lint:oxlint
+
+      - name: Lint (biome)
+        run: bun run lint:biome
+
+      - name: Typecheck
         run: bun run typecheck
-      
-      - name: Oxlint + Biome
-        if: matrix.name == 'Bun-Backend'
-        run: bun run lint:oxlint && bun run lint:biome
+
+      - name: Test
+        run: bun run test
+
+  app:
+    name: iOS-Swift
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: foodshare-app
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Swift test
+        run: swift test --parallel
+
+  quadlet:
+    name: Quadlet-Sentry-Infra
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Validate Quadlet units
+        run: |
+          set -euo pipefail
+          for unit in .config/containers/systemd/foodshare-web.container .config/containers/systemd/foodshare-cloudflared.container .config/containers/systemd/foodshare.network; do
+            test -f "$unit" || { echo "missing $unit"; exit 1; }
+            echo "ok: $unit"
+          done
+          grep -q '^PublishPort=127\.0\.0\.1:3000:3000' .config/containers/systemd/foodshare-web.container
+          grep -q '^ReadOnly=true' .config/containers/systemd/foodshare-web.container
+          grep -q '^NoNewPrivileges=true' .config/containers/systemd/foodshare-web.container
+          grep -q '^DropCapability=ALL' .config/containers/systemd/foodshare-web.container
+          grep -q '^ReadOnly=true' .config/containers/systemd/foodshare-cloudflared.container
+          grep -q '^NoNewPrivileges=true' .config/containers/systemd/foodshare-cloudflared.container
+          grep -q '^DropCapability=ALL' .config/containers/systemd/foodshare-cloudflared.container
+          grep -q '^BindsTo=foodshare-web.service' .config/containers/systemd/foodshare-cloudflared.container
+          echo "Quadlet units valid"
+
+      - name: Validate Sentry wiring
+        run: |
+          set -euo pipefail
+          test -f .env.production.sentry
+          grep -q '^NEXT_PUBLIC_SENTRY_DSN=https://' .env.production.sentry
+          grep -q '^SENTRY_ORG=' .env.production.sentry
+          grep -q '^SENTRY_PROJECT=' .env.production.sentry
+          test -f foodshare-web/sentry.client.config.ts
+          test -f foodshare-web/sentry.server.config.ts
+          test -f foodshare-web/sentry.edge.config.ts
+          grep -q 'SENTRY_AUTH_TOKEN' foodshare-web/Dockerfile
+          grep -q 'SENTRY_RELEASE' foodshare-web/Dockerfile
+          echo "Sentry wiring valid"
+
+      - name: Shellcheck deploy script
+        run: |
+          set -euo pipefail
+          bash -n DEPLOY-PRODUCTION.sh
+          echo "DEPLOY-PRODUCTION.sh syntax ok"

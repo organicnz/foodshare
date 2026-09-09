@@ -1,32 +1,66 @@
 name: CD Staging
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [closed]
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-staging
+  cancel-in-progress: false
+
 jobs:
   deploy-staging:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-22.04
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    runs-on: ubuntu-24.04
+    environment: staging
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: SSH to VPS
-        uses: appleboy/scp-action@v0.1.5
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Copy Quadlet units to VPS
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: organic
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ".config/containers/systemd/*"
           target: "~/.config/containers/systemd/"
-      
-      - name: Run Deployment
+          strip_components: 3
+
+      - name: Deploy via Quadlet
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+            loginctl enable-linger "$(whoami)" 2>/dev/null || true
+            systemctl --user daemon-reload
+            systemctl --user start foodshare-network.service
+            systemctl --user restart foodshare-web.service
+            systemctl --user restart foodshare-cloudflared.service
+            sleep 15
+            systemctl --user is-active foodshare-web.service
+            systemctl --user is-active foodshare-cloudflared.service
+            curl -sf http://127.0.0.1:3000/ > /dev/null
+
+      - name: Verify public health
         run: |
-          chmod +x DEPLOY-PRODUCTION.sh
-          ./DEPLOY-PRODUCTION.sh
-      
-      - name: Verify Health
-        run: |
-          curl -I https://foodshare.club
-          # Should return 200 with Cloudflare Ray ID
+          for i in 1 2 3 4 5 6; do
+            if curl -sf -o /dev/null -w "%{http_code}\n" https://foodshare.club | grep -q 200; then
+              echo "Public endpoint healthy"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Public health check failed"
+          exit 1

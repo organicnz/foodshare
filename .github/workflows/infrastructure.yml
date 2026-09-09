@@ -3,30 +3,59 @@ name: Infrastructure
 on:
   push:
     branches: [main]
-    paths: ['.config/containers/systemd/*']
+    paths: ['.config/containers/systemd/*', 'DEPLOY-PRODUCTION.sh']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-prod
+  cancel-in-progress: false
 
 jobs:
   apply-quadlet:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    environment: production
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: SSH to VPS
-        uses: appleboy/scp-action@v0.1.5
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Copy Quadlet units to VPS
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: organic
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ".config/containers/systemd/*"
           target: "~/.config/containers/systemd/"
-      
-      - name: Reload Systemd User
-        run: |
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user daemon-reload"
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-network.service"
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-web.service"
-          ssh organic@${{ secrets.VPS_HOST }} "systemctl --user start foodshare-cloudflared.service"
-      
-      - name: Verify
-        run: |
-          ssh organic@${{ secrets.VPS_HOST }} "curl -I https://foodshare.club"
+          strip_components: 3
+
+      - name: Reload and restart Quadlet stack
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+            loginctl enable-linger "$(whoami)" 2>/dev/null || true
+            systemctl --user daemon-reload
+            systemctl --user start foodshare-network.service
+            systemctl --user restart foodshare-web.service
+            systemctl --user restart foodshare-cloudflared.service
+            sleep 15
+            systemctl --user is-active foodshare-web.service
+            systemctl --user is-active foodshare-cloudflared.service
+
+      - name: Verify public health
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: organic
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            curl -sf -o /dev/null -w "local:%{http_code}\n" http://127.0.0.1:3000/
+            curl -s -o /dev/null -w "public:%{http_code}\n" https://foodshare.club

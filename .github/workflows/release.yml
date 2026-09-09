@@ -4,22 +4,43 @@ on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      
-      - name: Setup Semantic Release
-        uses: cycjimmy/github-action-semantic-release@v4
-        with:
-          aigithubtoken: ${{ secrets.GITHUB_TOKEN }}
-          tag-format: 'v1.0.0'
-          changelog-generator: github
 
-      - name: Verify Release
+      - name: Derive previous tag
+        id: prev
         run: |
-          git log --oneline v1.0.0..HEAD --no-merges > /tmp/changelog.md
+          set -euo pipefail
+          current="${GITHUB_REF_NAME}"
+          previous="$(git describe --tags --abbrev=0 "${current}^" 2>/dev/null || echo '')"
+          echo "current=${current}" >> "$GITHUB_OUTPUT"
+          echo "previous=${previous}" >> "$GITHUB_OUTPUT"
+          echo "Release ${previous:-<none>}..${current}"
+
+      - name: Build changelog
+        run: |
+          set -euo pipefail
+          if [ -n "${{ steps.prev.outputs.previous }}" ]; then
+            git log --oneline "${{ steps.prev.outputs.previous }}..${{ steps.prev.outputs.current }}" --no-merges > /tmp/changelog.md
+          else
+            git log --oneline "${{ steps.prev.outputs.current }}" --no-merges | head -100 > /tmp/changelog.md
+          fi
           cat /tmp/changelog.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: /tmp/changelog.md
+          generate_release_notes: true

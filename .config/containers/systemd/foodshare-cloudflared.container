@@ -14,12 +14,19 @@ Requires=foodshare-web.service
 BindsTo=foodshare-web.service
 
 [Container]
+# Pinned by tag on purpose: official cloudflared image, updated deliberately via CI.
+# No AutoUpdate=registry here by design — keep tunnel version deterministic.
 Image=cloudflare/cloudflared:latest
 ContainerName=foodshare-cloudflared
 Network=foodshare.network
 EnvironmentFile=%h/.config/foodshare/cloudflared.env
 # Alternatively, use a secret:
 # Secret=cf_tunnel_token,type=env,target=CLOUDFLARE_TUNNEL_TOKEN
+
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=ALL
+UserNS=keep-id
 
 # The tunnel runs in the background; cloudflared handles the HTTP->HTTPS routing
 Command=tunnel --no-autoupdate run foodshare-web-club

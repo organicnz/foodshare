@@ -2,8 +2,13 @@
 Description=Foodshare Next.js frontend
 After=foodshare-network.service
 Requires=foodshare-network.service
+BindsTo=foodshare-network.service
 
 [Container]
+# Pinned by tag on purpose: CI builds and pushes :latest per commit.
+# For digest-pinned deploys, replace with Image=ghcr.io/foodshareclub/foodshare-web@sha256:<digest>.
+# No AutoUpdate=registry here by design — deploys are deliberate via CI (see cd.yml),
+# never timer-driven surprises.
 Image=ghcr.io/foodshareclub/foodshare-web:latest
 ContainerName=foodshare-web
 Network=foodshare.network
